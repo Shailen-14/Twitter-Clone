@@ -22,6 +22,20 @@ const getProfile = async (req, res) => {
 
 const getSuggestedUsers = async (req, res) => {
   try {
+    const userId = req.user._id;
+
+    const userFollowing = await Users.findById(userId).select("following");
+
+    const suggestedUsers = await Users.find({
+      _id: {
+        $ne: userId,
+        $nin: userFollowing,
+      },
+    })
+      .select("-password")
+      .limit(6);
+
+    return res.status(200).json(suggestedUsers);
   } catch (error) {
     console.log(`Error in getSuggestedUsers controller: ${error.message}`);
     return res.status(500).json("Internal Server Error");
@@ -197,4 +211,41 @@ const updateProfile = async (req, res) => {
   }
 };
 
-export { getProfile, getSuggestedUsers, followUnfollowUser, updateProfile };
+const getFollowing = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const userFollowing = await Users.findById(userId)
+      .select("following -_id")
+      .populate("following", "-password");
+
+    return res.status(200).json(userFollowing);
+  } catch (error) {
+    console.log(`Error in getFollowing controller: ${error.message}`);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const getFollowers = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const userFollowers = await Users.findById(userId)
+      .select("followers -_id")
+      .populate("followers", "-password");
+
+    return res.status(200).json(userFollowers);
+  } catch (error) {
+    console.log(`Error in getFollowers controller: ${error.message}`);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export {
+  getProfile,
+  getSuggestedUsers,
+  followUnfollowUser,
+  updateProfile,
+  getFollowing,
+  getFollowers,
+};
